@@ -1,0 +1,181 @@
+{
+  "Outputs": {
+    "SumoKNMILambdaFunction": {
+      "Description": "Dutch KMNI Lambda Function ARN for sumologic account",
+      "Value": {
+        "Fn::GetAtt": [ "SumoKNMILambdaFunction", "Arn" ]
+      },
+      "Export": {
+        "Name": {
+          "Fn::Join": [
+            "-", [ "SumoKNMILambdaFunctionArn",
+              { "Fn::Select": [ "2", { "Fn::Split": [ "/", { "Ref": "AWS::StackId" } ] } ] }
+            ]
+          ]
+        }
+      }
+    }
+  },
+  "Parameters": {
+    "SumoKMNIAWSRegion": {
+      "Type": "String",
+      "Default": "us-east-2",
+      "Description": "AWS region for parameter store, by default: us-east-1"
+    },
+    "SumoKMNILogLevel": {
+      "Type": "String",
+      "Default": "WARNING",
+      "AllowedValues": [
+        "CRITICAL",
+        "ERROR",
+        "WARNING",
+        "DEBUG",
+        "INFO",
+        "NOTSET"
+      ],
+      "Description": "Lambda function loglevel, by default: WARNING"
+    },
+    "SumoKMNIEndpoint": {
+      "Type": "String",
+      "Default": "",
+      "Description": "SumoLogic secret endpoint for submission of events to your Sumo account"
+    },
+    "SumoKNMIURL": {
+      "Type": "String",
+      "Default": "https://www.daggegevens.knmi.nl/klimatologie/daggegevens",
+      "Description": "URL where to fetch knmi data"
+    },
+    "SumoKNMIFormat": {
+      "Type": "String",
+      "Default": "sumo",
+      "Description": "type of output"
+    },
+    "SumoKMNIS3Bucket": {
+      "Type": "String",
+      "Default": "",
+      "Description": "S3 bucket where lambda zip archive is located"
+    },
+    "SumoKNMIS3BucketKey": {
+      "Type": "String",
+      "Default": "knmilambda.zip",
+      "Description": "Key within bucket where dutch lambda zip archive is located"
+    },
+    "SumoKMNIHistory": {
+      "Type": "Number",
+      "Default": 10,
+      "Description": "Start collecting from this number of days ago"
+    },
+    "SumoKMNIMaxDays": {
+      "Type": "Number",
+      "Default": 10,
+      "Description": "To avoid lambda timeouts, select max number of days to process in one run"
+    },
+    "SumoKMNIDES3BucketKey": {
+      "Type": "String",
+      "Default": "knmilambda.zip",
+      "Description": "Key within bucket where german lambda zip archive is located"
+    }
+  },
+  "Resources": {
+    "SumoKMNILambdaRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "RoleName": "SumoKMNILambdaRole",
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Path": "/",
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/AmazonSSMFullAccess",
+          "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+        ]
+      }
+    },
+    "SumoKMNILambdaRule": {
+      "Type": "AWS::Events::Rule",
+      "Properties": {
+        "Description": "Sumo Logic KMNI lambda trigger Rule",
+        "Name": "SumoKMNITrigger",
+        "ScheduleExpression": "rate(4 hours)",
+        "State": "ENABLED",
+        "Targets": [
+          {
+            "Arn": {
+              "Fn::GetAtt": [
+                "SumoKNMILambdaFunction",
+                "Arn"
+              ]
+            },
+            "Id": "SumoKNMILambdaFunction"
+          }
+        ]
+      }
+    },
+    "LambdaSchedulePermissionNL": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {"Fn::GetAtt":["SumoKNMILambdaFunction","Arn"]},
+        "Principal": "events.amazonaws.com",
+        "SourceArn": { "Fn::GetAtt": [ "SumoKMNILambdaRule", "Arn" ] }
+      }
+    },
+    "SumoKNMILambdaFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Ref": "SumoKMNIS3Bucket"
+          },
+          "S3Key": {
+            "Ref": "SumoKNMIS3BucketKey"
+          }
+        },
+        "Description": "Lambda function which extracts recent knmi data from KNMI portal and sends to sumo logic endpoint",
+        "FunctionName": "SumoKNMILambdaFunction",
+        "Handler": "GetKNMILambda.lambda_handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "SumoKMNILambdaRole",
+            "Arn"
+          ]
+        },
+        "Runtime": "python3.11",
+        "Timeout": 900,
+        "Environment": {
+          "Variables": {
+            "loglevel": {
+              "Ref": "SumoKMNILogLevel"
+            },
+            "url": {
+              "Ref": "SumoKNMIURL"
+            },
+            "format": {
+              "Ref": "SumoKNMIFormat"
+            },
+            "endpoint": {
+              "Ref": "SumoKMNIEndpoint"
+            },
+            "history": {
+              "Ref": "SumoKMNIHistory"
+            },
+            "history": {
+              "Ref": "SumoKMNIMaxDays"
+            },
+            "region": {
+              "Ref": "SumoKMNIAWSRegion"
+            }
+          }
+        }
+      }
+    }
+  }
+}
