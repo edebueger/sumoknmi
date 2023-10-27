@@ -67,7 +67,7 @@
     },
     "SumoKMNIMaxDays": {
       "Type": "Number",
-      "Default": 10,
+      "Default": 5,
       "Description": "To avoid lambda timeouts, select max number of days to process in one run"
     },
     "SumoKMNIDES3BucketKey": {
@@ -167,7 +167,7 @@
             "history": {
               "Ref": "SumoKMNIHistory"
             },
-            "history": {
+            "maxdays": {
               "Ref": "SumoKMNIMaxDays"
             },
             "region": {

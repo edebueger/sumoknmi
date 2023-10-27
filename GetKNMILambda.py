@@ -230,7 +230,7 @@ def legend_digger(raw):
         m=LEGENDREGEX.match(line)
         if m:
             try:
-                yield({m.group('SYMBOL'):m.group('legend')})
+                yield({'symbol':m.group('SYMBOL'),'desc':m.group('legend')})
             except:
                 pass
 
@@ -270,8 +270,8 @@ def main():
                      help = 'Collect this many days in the past as the latest available data, more recent days will not be populated, defaults to 30')
     p.add_option("--history", dest="history", type='int', default=30, \
                      help = 'Collect this many days of historic data, defaults to 10')
-    p.add_option("--maxdays", dest="maxdays", type='int', default=10, \
-                     help = 'Maximum amount of days to be collected in one run , defaults to 10')
+    p.add_option("--maxdays", dest="maxdays", type='int', default=5, \
+                     help = 'Maximum amount of days to be collected in one run , defaults to 5')
     p.add_option("--endpoint", dest="endpoint", default=None, \
                   help = 'endpoint (sumo, splunk, elastic url) where data is delivered, defaults to: {}'.format('None'))
     p.add_option("-n", "--stationnumber", dest="stationnumber", type='int', default=-1, \
