@@ -83,7 +83,7 @@ class CacheFile(Cache) :
     def Flush(self) :
         try:
             self.fp = open(os.path.join(sys.path[0],self.file),'wb')
-            pickle.dump(self.d,self.fp)
+            pickle.dump(self.d,self.fp, protocol=0)
             self.fp.truncate()
             self.fp.flush()
             self.fp.close()
@@ -165,6 +165,35 @@ class EventWriter(object) :
         #sys.stdout.write('{}\n\n'.format(json.dumps(data).encode('utf-8', 'replace')))
         sys.stdout.write('{}\n\n'.format(json.dumps(data)))
 
+    def flush(self) :
+        pass
+
+class EventWriterCached(EventWriter) :
+    def __init__(self, **kwargs):
+        self.marshal  = kwargs.get('mfunc',None)
+        self.logger   = kwargs.get('logger',None)
+        self.cache    = []
+        self.batch    = 10
+
+    def send(self, message):
+        if self.marshal != None :
+            data=self.marshal(message)
+        else :
+            data=message
+        self.cache.append(data)
+        if len(self.cache) >= self.batch :
+            s='\n'.join([json.dumps(x) for x in self.cache])
+            stdout.write(s)
+            stdout.write('\n')
+            self.cache=[]
+
+    def flush(self) :
+        if len(self.cache) > 0:
+            s='\n'.join([json.dumps(x) for x in self.cache])
+            sys.stdout.write(self.url, s)
+            sys.stdout.write('\n')
+            self.cache=[]
+
 class EventWriterJSON(EventWriter) :
     def __init__(self, **kwargs):
         self.marshal  = kwargs.get('mfunc',None)
@@ -180,6 +209,34 @@ class EventWriterJSON(EventWriter) :
         response = requests.post(self.url, data=json.dumps(data))
         if self.logger != None:
             self.logger.info('Endpoint response: {}'.format(response.text))
+
+class EventWriterCachedJSON(EventWriter) :
+    def __init__(self, **kwargs):
+        self.marshal  = kwargs.get('mfunc',None)
+        self.logger   = kwargs.get('logger',None)
+        self.url      = kwargs.get('endpoint',None)
+        self.cache    = []
+        self.batch    = 10
+
+    # message is dict
+    def send(self, message):
+        if self.marshal != None :
+            data=self.marshal(message)
+        else :
+            data=message
+        self.cache.append(data)
+        if len(self.cache) >= self.batch :
+            s='\n'.join([x for x in json.dumps(self.cache)])
+            response = requests.post(self.url, data=s)
+            self.cache=[]
+            if self.logger != None:
+                self.logger.info('Endpoint response: {}'.format(response.text))
+
+    def flush(self) :
+        if len(self.cache) > 0:
+            s='\n'.join([x for x in json.dumps(self.cache)])
+            response = requests.post(self.url, s)
+            self.cache=[]
 
 def GetDailyData(url, startdate,enddate, logger) :
     params = dict(stns='ALL')
@@ -251,6 +308,47 @@ def station_digger(raw):
 def daterange(start_date, end_date):
     for n in range(int((end_date - start_date).days)):
         yield start_date + datetime.timedelta(n)
+
+def planning(latest,history,maxdays) :
+    startdate= datetime.datetime.now()-datetime.timedelta(days=opts.history)
+    enddate= datetime.datetime.now()-datetime.timedelta(days=opts.latest)
+
+def DoCollect(startdate,enddate,cachedate,opts,eventwriter,cache,logger):
+    # Decide which days we will try to collect: startdate=the start date requested, enddate=latest possible end date, cachedate=last date collected, or equal to startdate
+    daysback= (datetime.datetime.now()-cachedate).days
+    if daysback > opts.maxdays :
+        enddate = cachedate + datetime.timedelta(days=opts.maxdays)
+    startdate=cachedate + datetime.timedelta(days=1)
+    logger.info('Planning to collect from {} to {}'.format(startdate.strftime(standarddateformat), enddate.strftime(standarddateformat)))
+
+    # Write legend + stations inventory only on some random occasions
+    writelegend = (randint(1,5)==3)
+
+    # Start collecting on per-day basis
+    for thedate in daterange(startdate, enddate):
+        thedata = GetDailyData(URLS['daily'], thedate,thedate,logger)
+        # Send data
+        nEvents=0
+        for d in data_digger(thedata):
+            if d != None:
+                d.update({'type':'daily'})
+                eventwriter.send(d)
+                nEvents+=1
+        if writelegend:
+            for d in legend_digger(thedata):
+                if d != None:
+                    d.update({'type':'legend'})
+                    eventwriter.send(d)
+            for d in station_digger(thedata):
+                if d != None:
+                    d.update({'type':'station'})
+                    eventwriter.send(d)
+            writelegend=False
+        # Update cache
+        if nEvents > 10:
+            cache.Write('daily',thedate)
+        logger.info('Send {} events for day {}'.format(nEvents,thedate.strftime(standarddateformat)))
+
 
 # Main code
 def main():
@@ -351,7 +449,8 @@ def main():
         eventwriter=EventWriter(logger=logger,mfunc=MarshalGeneric)
         logger.info('Writing events to stdout')
     elif opts.format=='sumo':
-        eventwriter=EventWriterJSON(endpoint=opts.endpoint,mfunc=MarshalGeneric, logger=logger)
+        #eventwriter=EventWriterJSON(endpoint=opts.endpoint,mfunc=MarshalGeneric, logger=logger)
+        eventwriter=EventWriterCachedJSON(endpoint=opts.endpoint,mfunc=MarshalGeneric, logger=logger)
         logger.info('Writing events to Sumo')
     else :
         logger.err('Unknow destination format provided: {}. Options are: stdout-splunk-elastic-sumo'.format(opts.format))
@@ -380,42 +479,10 @@ def main():
                 sys.exit()
         sys.exit()
 
-    # Decide which days we will try to collect: startdate=the start date requested, enddate=latest possible end date, cachedate=last date collected, or equal to startdate
-    daysback= (datetime.datetime.now()-cachedate).days
-    if daysback > opts.maxdays :
-        enddate = cachedate + datetime.timedelta(days=opts.maxdays)
-    startdate=cachedate + datetime.timedelta(days=1)
-    logger.info('Planning to collect from {} to {}'.format(startdate.strftime(standarddateformat), enddate.strftime(standarddateformat)))
-
-    # Write legend + stations inventory only on some random occasions
-    writelegend = (randint(1,5)==3)
-
-    # Start collecting on per-day basis
-    for thedate in daterange(startdate, enddate):
-        thedata = GetDailyData(URLS['daily'], thedate,thedate,logger)
-        # Send data
-        nEvents=0
-        for d in data_digger(thedata):
-            if d != None:
-                d.update({'type':'daily'})
-                eventwriter.send(d)
-                nEvents+=1
-        if writelegend:
-            for d in legend_digger(thedata):
-                if d != None:
-                    d.update({'type':'legend'})
-                    eventwriter.send(d)
-            for d in station_digger(thedata):
-                if d != None:
-                    d.update({'type':'station'})
-                    eventwriter.send(d)
-            writelegend=False
-        # Update cache
-        if nEvents > 10:
-            cache.Write('daily',thedate)
-        logger.info('Send {} events for day {}'.format(nEvents,thedate.strftime(standarddateformat)))
+    DoCollect(startdate,enddate,cachedate,opts,eventwriter,cache,logger)
 
     cache.Close()
+    eventwriter.flush()
 
 if __name__ == '__main__':
     main()
