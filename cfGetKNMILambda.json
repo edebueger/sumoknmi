@@ -70,6 +70,11 @@
       "Default": 5,
       "Description": "To avoid lambda timeouts, select max number of days to process in one run"
     },
+    "SumoBatchSize": {
+      "Type": "Number",
+      "Default": 1,
+      "Description": "Output batch size"
+    },
     "SumoKMNIDES3BucketKey": {
       "Type": "String",
       "Default": "knmilambda.zip",
@@ -169,6 +174,9 @@
             },
             "maxdays": {
               "Ref": "SumoKMNIMaxDays"
+            },
+            "batch": {
+              "Ref": "SumoBatchSize"
             },
             "region": {
               "Ref": "SumoKMNIAWSRegion"

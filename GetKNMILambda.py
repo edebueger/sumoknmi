@@ -172,8 +172,8 @@ class EventWriterCached(EventWriter) :
     def __init__(self, **kwargs):
         self.marshal  = kwargs.get('mfunc',None)
         self.logger   = kwargs.get('logger',None)
+        self.batch    = kwargs.get('batch',1)
         self.cache    = []
-        self.batch    = 10
 
     def send(self, message):
         if self.marshal != None :
@@ -183,14 +183,14 @@ class EventWriterCached(EventWriter) :
         self.cache.append(data)
         if len(self.cache) >= self.batch :
             s='\n'.join([json.dumps(x) for x in self.cache])
-            stdout.write(s)
-            stdout.write('\n')
+            sys.stdout.write(s)
+            sys.stdout.write('\n')
             self.cache=[]
 
     def flush(self) :
         if len(self.cache) > 0:
             s='\n'.join([json.dumps(x) for x in self.cache])
-            sys.stdout.write(self.url, s)
+            sys.stdout.write(s)
             sys.stdout.write('\n')
             self.cache=[]
 
@@ -215,8 +215,8 @@ class EventWriterCachedJSON(EventWriter) :
         self.marshal  = kwargs.get('mfunc',None)
         self.logger   = kwargs.get('logger',None)
         self.url      = kwargs.get('endpoint',None)
+        self.batch    = kwargs.get('batch',1)
         self.cache    = []
-        self.batch    = 10
 
     # message is dict
     def send(self, message):
@@ -370,6 +370,8 @@ def main():
                      help = 'Collect this many days of historic data, defaults to 10')
     p.add_option("--maxdays", dest="maxdays", type='int', default=5, \
                      help = 'Maximum amount of days to be collected in one run , defaults to 5')
+    p.add_option("-b","--batch", dest="batch", type='int', default=10, \
+                     help = 'output batch size, defaults to 10')
     p.add_option("--endpoint", dest="endpoint", default=None, \
                   help = 'endpoint (sumo, splunk, elastic url) where data is delivered, defaults to: {}'.format('None'))
     p.add_option("-n", "--stationnumber", dest="stationnumber", type='int', default=-1, \
@@ -385,7 +387,7 @@ def main():
     opts,args = p.parse_args()
 
     # For AWS lambda: try to overwrite some options from environment
-    for x in ('format','endpoint','logtype','url','loglevel','stationnumber','region','history','latest','maxdays') :
+    for x in ('format','endpoint','logtype','url','loglevel','stationnumber','region','history','latest','maxdays','batch') :
         try:
             exec('opts.{}=os.environ[\'{}\']'.format(x,x))
         except Exception as e:
@@ -406,6 +408,10 @@ def main():
         opts.stationnumber = int(opts.stationnumber)
     except:
         pass
+    try:
+        opts.batch = int(opts.batch)
+    except:
+        pass
 
     startdate= datetime.datetime.now()-datetime.timedelta(days=opts.history)
     enddate= datetime.datetime.now()-datetime.timedelta(days=opts.latest)
@@ -417,6 +423,7 @@ def main():
 
     formatter = logging.Formatter('%(asctime)s,Level=%(levelname)s,\
                                    LOGGING=%(message)s', '%m/%d/%Y %H:%M:%S')
+
     sh = logging.StreamHandler(sys.stderr)
     sh.setFormatter(formatter)
     logger        = logging.getLogger('KNMI')
@@ -446,11 +453,11 @@ def main():
 
     # Create output channel
     if opts.format=='stdout':
-        eventwriter=EventWriter(logger=logger,mfunc=MarshalGeneric)
+        eventwriter=EventWriterCached(logger=logger,mfunc=MarshalGeneric,batch=opts.batch)
         logger.info('Writing events to stdout')
     elif opts.format=='sumo':
         #eventwriter=EventWriterJSON(endpoint=opts.endpoint,mfunc=MarshalGeneric, logger=logger)
-        eventwriter=EventWriterCachedJSON(endpoint=opts.endpoint,mfunc=MarshalGeneric, logger=logger)
+        eventwriter=EventWriterCachedJSON(endpoint=opts.endpoint,mfunc=MarshalGeneric, logger=logger,batch=opts.batch)
         logger.info('Writing events to Sumo')
     else :
         logger.err('Unknow destination format provided: {}. Options are: stdout-splunk-elastic-sumo'.format(opts.format))
