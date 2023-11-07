@@ -1,0 +1,599 @@
+{
+    "type": "FolderSyncDefinition",
+    "name": "Climate",
+    "description": "",
+    "children": [
+        {
+            "type": "DashboardV2SyncDefinition",
+            "name": "KNMI",
+            "description": "",
+            "title": "KNMI",
+            "theme": "Light",
+            "topologyLabelMap": {
+                "data": {}
+            },
+            "refreshInterval": 0,
+            "timeRange": {
+                "type": "BeginBoundedTimeRange",
+                "from": {
+                    "type": "RelativeTimeRangeBoundary",
+                    "relativeTime": "-4w2d"
+                },
+                "to": null
+            },
+            "layout": {
+                "layoutType": "Grid",
+                "layoutStructures": [
+                    {
+                        "key": "panel1f06706cb49f6844",
+                        "structure": "{\"height\":6,\"width\":16,\"x\":0,\"y\":0}"
+                    },
+                    {
+                        "key": "panelc1c4883093102b46",
+                        "structure": "{\"height\":6,\"width\":8,\"x\":16,\"y\":0}"
+                    },
+                    {
+                        "key": "panel7c715c81a0cd3a43",
+                        "structure": "{\"height\":6,\"width\":8,\"x\":16,\"y\":9}"
+                    },
+                    {
+                        "key": "panel0b9290c6bb626a4d",
+                        "structure": "{\"height\":3,\"width\":4,\"x\":0,\"y\":6}"
+                    },
+                    {
+                        "key": "panel2f8438b7aa307a42",
+                        "structure": "{\"height\":3,\"width\":4,\"x\":5,\"y\":6}"
+                    },
+                    {
+                        "key": "panelf79803bda1e7e84b",
+                        "structure": "{\"height\":3,\"width\":4,\"x\":11,\"y\":6}"
+                    },
+                    {
+                        "key": "panel3ac67b9c8ea4fb4a",
+                        "structure": "{\"height\":3,\"width\":8,\"x\":16,\"y\":6}"
+                    },
+                    {
+                        "key": "panele5be0a0a97f8a841",
+                        "structure": "{\"height\":6,\"width\":8,\"x\":0,\"y\":9}"
+                    },
+                    {
+                        "key": "panel763e24c68277cb47",
+                        "structure": "{\"height\":6,\"width\":8,\"x\":8,\"y\":9}"
+                    },
+                    {
+                        "key": "panelPANE-E78EE3419036DA47",
+                        "structure": "{\"height\":6,\"width\":12,\"x\":0,\"y\":21}"
+                    },
+                    {
+                        "key": "panel8C9B063FB131184A",
+                        "structure": "{\"height\":6,\"width\":12,\"x\":12,\"y\":15}"
+                    },
+                    {
+                        "key": "panelF9CB94049093AA41",
+                        "structure": "{\"height\":6,\"width\":12,\"x\":0,\"y\":15}"
+                    },
+                    {
+                        "key": "panelC55F01B0AFE32A42",
+                        "structure": "{\"height\":6,\"width\":12,\"x\":12,\"y\":21}"
+                    }
+                ]
+            },
+            "panels": [
+                {
+                    "id": null,
+                    "key": "panel763e24c68277cb47",
+                    "title": "Sun Hours",
+                    "visualSettings": "{\"title\":{\"fontSize\":14},\"general\":{\"type\":\"map\",\"displayType\":\"default\",\"roundDataPoints\":true,\"mode\":\"map\"},\"series\":{}}",
+                    "keepVisualSettingsConsistentWithParent": true,
+                    "panelType": "SumoSearchPanel",
+                    "queries": [
+                        {
+                            "transient": false,
+                            "queryString": "_sourceCategory=knmi |json auto | where type=\"daily\" and !isEmpty(SQ)\n| int(stn) as stn \n| lookup station,lat,lon from path://\"/Library/Users/edebueger@sumologic.com/Climate/stations\" on stn\n| where station matches \"{{station}}\"\n| timeslice 1d | count by stn, lat,lon,_timeslice,sq | fields - _count \n| sum(sq) as SUN by stn, lat,lon | double(lat) as latitude| double(lon) as longitude | fields -lat,lon,stn | SUN/10 as _count",
+                            "queryType": "Logs",
+                            "queryKey": "A",
+                            "metricsQueryMode": null,
+                            "metricsQueryData": null,
+                            "tracesQueryData": null,
+                            "spansQueryData": null,
+                            "parseMode": "Auto",
+                            "timeSource": "Message",
+                            "outputCardinalityLimit": 1000
+                        }
+                    ],
+                    "description": null,
+                    "timeRange": null,
+                    "coloringRules": null,
+                    "linkedDashboards": []
+                },
+                {
+                    "id": null,
+                    "key": "panelf79803bda1e7e84b",
+                    "title": "Min min Temp",
+                    "visualSettings": "{\"title\":{\"fontSize\":14},\"general\":{\"type\":\"svp\",\"displayType\":\"default\",\"mode\":\"singleValueMetrics\"},\"svp\":{\"option\":\"Latest\",\"label\":\"\",\"useBackgroundColor\":false,\"useNoData\":false,\"noDataString\":\"No data\",\"hideData\":false,\"hideLabel\":false,\"rounding\":2,\"valueFontSize\":24,\"labelFontSize\":14,\"thresholds\":[{\"from\":null,\"to\":null,\"color\":\"#16943E\"},{\"from\":null,\"to\":null,\"color\":\"#DFBE2E\"},{\"from\":null,\"to\":null,\"color\":\"#BF2121\"}],\"sparkline\":{\"show\":false,\"color\":\"#222D3B\"},\"gauge\":{\"show\":false,\"min\":0,\"max\":100,\"showThreshold\":false,\"showThresholdMarker\":false}},\"series\":{}}",
+                    "keepVisualSettingsConsistentWithParent": true,
+                    "panelType": "SumoSearchPanel",
+                    "queries": [
+                        {
+                            "transient": false,
+                            "queryString": "_sourceCategory=knmi |json auto | where type=\"daily\"\n| int(stn) as stn \n| lookup station from path://\"/Library/Users/edebueger@sumologic.com/Climate/stations\" on stn\n| where station matches \"{{station}}\"\n|min(tn) as MINTEMP by station  | MINTEMP/10 as TEMP |sort by TEMP asc | concat(Station,\" :: \",TEMP) AS result | first(result)",
+                            "queryType": "Logs",
+                            "queryKey": "A",
+                            "metricsQueryMode": null,
+                            "metricsQueryData": null,
+                            "tracesQueryData": null,
+                            "spansQueryData": null,
+                            "parseMode": "Auto",
+                            "timeSource": "Message",
+                            "outputCardinalityLimit": 1000
+                        }
+                    ],
+                    "description": null,
+                    "timeRange": null,
+                    "coloringRules": null,
+                    "linkedDashboards": []
+                },
+                {
+                    "id": null,
+                    "key": "panel2f8438b7aa307a42",
+                    "title": "Max max temp",
+                    "visualSettings": "{\"title\":{\"fontSize\":14},\"general\":{\"type\":\"svp\",\"displayType\":\"default\",\"mode\":\"singleValueMetrics\"},\"svp\":{\"option\":\"Latest\",\"label\":\"\",\"useBackgroundColor\":false,\"useNoData\":false,\"noDataString\":\"No data\",\"hideData\":false,\"hideLabel\":false,\"rounding\":2,\"valueFontSize\":24,\"labelFontSize\":14,\"thresholds\":[{\"from\":null,\"to\":null,\"color\":\"#16943E\"},{\"from\":null,\"to\":null,\"color\":\"#DFBE2E\"},{\"from\":null,\"to\":null,\"color\":\"#BF2121\"}],\"sparkline\":{\"show\":false,\"color\":\"#222D3B\"},\"gauge\":{\"show\":false,\"min\":0,\"max\":100,\"showThreshold\":false,\"showThresholdMarker\":false}},\"series\":{}}",
+                    "keepVisualSettingsConsistentWithParent": true,
+                    "panelType": "SumoSearchPanel",
+                    "queries": [
+                        {
+                            "transient": false,
+                            "queryString": "_sourceCategory=knmi |json auto | where type=\"daily\"\n| int(stn) as stn \n| lookup station from path://\"/Library/Users/edebueger@sumologic.com/Climate/stations\" on stn\n| where station matches \"{{station}}\"\n|max(tx) as MAXTEMP by station  | MAXTEMP/10 as TEMP |sort by TEMP desc | concat(Station,\" :: \",TEMP) AS result | first(result)",
+                            "queryType": "Logs",
+                            "queryKey": "A",
+                            "metricsQueryMode": null,
+                            "metricsQueryData": null,
+                            "tracesQueryData": null,
+                            "spansQueryData": null,
+                            "parseMode": "Auto",
+                            "timeSource": "Message",
+                            "outputCardinalityLimit": 1000
+                        }
+                    ],
+                    "description": null,
+                    "timeRange": null,
+                    "coloringRules": null,
+                    "linkedDashboards": []
+                },
+                {
+                    "id": null,
+                    "key": "panel0b9290c6bb626a4d",
+                    "title": "Days since last event",
+                    "visualSettings": "{\"title\":{\"fontSize\":14},\"general\":{\"type\":\"svp\",\"displayType\":\"default\",\"mode\":\"singleValueMetrics\"},\"svp\":{\"option\":\"Latest\",\"label\":\"\",\"useBackgroundColor\":false,\"useNoData\":false,\"noDataString\":\"No data\",\"hideData\":false,\"hideLabel\":false,\"rounding\":2,\"valueFontSize\":24,\"labelFontSize\":14,\"thresholds\":[{\"from\":null,\"to\":null,\"color\":\"#16943E\"},{\"from\":null,\"to\":null,\"color\":\"#DFBE2E\"},{\"from\":null,\"to\":null,\"color\":\"#BF2121\"}],\"sparkline\":{\"show\":false,\"color\":\"#222D3B\"},\"gauge\":{\"show\":false,\"min\":0,\"max\":100,\"showThreshold\":false,\"showThresholdMarker\":false}},\"series\":{}}",
+                    "keepVisualSettingsConsistentWithParent": true,
+                    "panelType": "SumoSearchPanel",
+                    "queries": [
+                        {
+                            "transient": false,
+                            "queryString": "_sourceCategory=knmi | json \"type\" as type| where type=\"daily\"\n| int(stn) as stn \n| lookup station from path://\"/Library/Users/edebueger@sumologic.com/Climate/stations\" on stn\n| where station matches \"{{station}}\"\n|first(_messageTime) AS lastday | now() - lastday AS msecs | msecs/86400000 as dd | ceil(dd) as DAYS | fields DAYS",
+                            "queryType": "Logs",
+                            "queryKey": "A",
+                            "metricsQueryMode": null,
+                            "metricsQueryData": null,
+                            "tracesQueryData": null,
+                            "spansQueryData": null,
+                            "parseMode": "Auto",
+                            "timeSource": "Message",
+                            "outputCardinalityLimit": 1000
+                        }
+                    ],
+                    "description": null,
+                    "timeRange": null,
+                    "coloringRules": null,
+                    "linkedDashboards": []
+                },
+                {
+                    "id": null,
+                    "key": "panele5be0a0a97f8a841",
+                    "title": "Rain",
+                    "visualSettings": "{\"title\":{\"fontSize\":14},\"general\":{\"type\":\"map\",\"displayType\":\"default\",\"roundDataPoints\":true,\"mode\":\"map\"},\"series\":{}}",
+                    "keepVisualSettingsConsistentWithParent": true,
+                    "panelType": "SumoSearchPanel",
+                    "queries": [
+                        {
+                            "transient": false,
+                            "queryString": "_sourceCategory=knmi |json auto | where type=\"daily\" and !isEmpty(RH)\n| int(stn) as stn \n| lookup station,lat,lon from path://\"/Library/Users/edebueger@sumologic.com/Climate/stations\" on stn\n| where station matches \"{{station}}\"\n| timeslice 1d | count by stn, lat,lon,_timeslice,rh | fields - _count | where rh != -1\n| sum(rh) as RAIN by stn, lat,lon | RAIN/10 as RAIN |double(lat) as latitude| double(lon) as longitude | fields -lat,lon,stn | Rain as _count",
+                            "queryType": "Logs",
+                            "queryKey": "A",
+                            "metricsQueryMode": null,
+                            "metricsQueryData": null,
+                            "tracesQueryData": null,
+                            "spansQueryData": null,
+                            "parseMode": "Auto",
+                            "timeSource": "Message",
+                            "outputCardinalityLimit": 1000
+                        }
+                    ],
+                    "description": null,
+                    "timeRange": null,
+                    "coloringRules": null,
+                    "linkedDashboards": []
+                },
+                {
+                    "id": null,
+                    "key": "panel7c715c81a0cd3a43",
+                    "title": "Temperature",
+                    "visualSettings": "{\"title\":{\"fontSize\":14},\"general\":{\"type\":\"map\",\"displayType\":\"default\",\"roundDataPoints\":true,\"mode\":\"map\"},\"series\":{}}",
+                    "keepVisualSettingsConsistentWithParent": true,
+                    "panelType": "SumoSearchPanel",
+                    "queries": [
+                        {
+                            "transient": false,
+                            "queryString": "_sourceCategory=knmi |json auto | where type=\"daily\"\n| int(stn) as stn \n| lookup station,lat,lon from path://\"/Library/Users/edebueger@sumologic.com/Climate/stations\" on stn\n| where station matches \"{{station}}\"\n| timeslice 1d\n| count by _timeslice, station, TG,lat,lon \n| sort by station,_timeslice \n| first(TG) AS TG,first(lat) AS lat, first(lon) AS lon by Station | TG/10 as TEMP\n| avg(TEMP) by Station, lat,lon | lat as latitude | lon as longitude | round(_avg) as _count| fields -lat,lon,_avg,station | double(latitude) as latitude | double(longitude) as longitude",
+                            "queryType": "Logs",
+                            "queryKey": "A",
+                            "metricsQueryMode": null,
+                            "metricsQueryData": null,
+                            "tracesQueryData": null,
+                            "spansQueryData": null,
+                            "parseMode": "Auto",
+                            "timeSource": "Message",
+                            "outputCardinalityLimit": 1000
+                        }
+                    ],
+                    "description": null,
+                    "timeRange": {
+                        "type": "BeginBoundedTimeRange",
+                        "from": {
+                            "type": "RelativeTimeRangeBoundary",
+                            "relativeTime": "-4w2d"
+                        },
+                        "to": null
+                    },
+                    "coloringRules": null,
+                    "linkedDashboards": []
+                },
+                {
+                    "id": null,
+                    "key": "panel1f06706cb49f6844",
+                    "title": "Legend",
+                    "visualSettings": "{\"title\":{\"fontSize\":12},\"series\":{},\"general\":{\"type\":\"table\",\"fontSize\":12,\"mode\":\"timeSeries\"},\"thresholdsSettings\":{\"fillRemainingGreen\":false,\"showThresholds\":false,\"numberThresholds\":{\"warning\":{\"display\":true,\"comparator\":\"greater_or_equal\",\"value\":80},\"critical\":{\"display\":true,\"comparator\":\"greater_or_equal\",\"value\":100}},\"highlightViolations\":true}}",
+                    "keepVisualSettingsConsistentWithParent": true,
+                    "panelType": "SumoSearchPanel",
+                    "queries": [
+                        {
+                            "transient": false,
+                            "queryString": "cat path://\"/Library/Users/edebueger@sumologic.com/Climate/legend\" | count by Symbol,Description | fields - _count",
+                            "queryType": "Logs",
+                            "queryKey": "A",
+                            "metricsQueryMode": null,
+                            "metricsQueryData": null,
+                            "tracesQueryData": null,
+                            "spansQueryData": null,
+                            "parseMode": "Auto",
+                            "timeSource": "Message",
+                            "outputCardinalityLimit": null
+                        }
+                    ],
+                    "description": null,
+                    "timeRange": {
+                        "type": "BeginBoundedTimeRange",
+                        "from": {
+                            "type": "RelativeTimeRangeBoundary",
+                            "relativeTime": "-15m"
+                        },
+                        "to": null
+                    },
+                    "coloringRules": null,
+                    "linkedDashboards": []
+                },
+                {
+                    "id": null,
+                    "key": "panel3ac67b9c8ea4fb4a",
+                    "title": "Max avg daily temp. change consequent days",
+                    "visualSettings": "{\"title\":{\"fontSize\":14},\"general\":{\"type\":\"svp\",\"displayType\":\"default\",\"mode\":\"singleValueMetrics\"},\"svp\":{\"option\":\"Latest\",\"label\":\"\",\"useBackgroundColor\":false,\"useNoData\":false,\"noDataString\":\"No data\",\"hideData\":false,\"hideLabel\":false,\"rounding\":2,\"valueFontSize\":24,\"labelFontSize\":14,\"thresholds\":[{\"from\":null,\"to\":null,\"color\":\"#16943E\"},{\"from\":null,\"to\":null,\"color\":\"#DFBE2E\"},{\"from\":null,\"to\":null,\"color\":\"#BF2121\"}],\"sparkline\":{\"show\":false,\"color\":\"#222D3B\"},\"gauge\":{\"show\":false,\"min\":0,\"max\":100,\"showThreshold\":false,\"showThresholdMarker\":false}},\"series\":{}}",
+                    "keepVisualSettingsConsistentWithParent": true,
+                    "panelType": "SumoSearchPanel",
+                    "queries": [
+                        {
+                            "transient": false,
+                            "queryString": "_sourceCategory=knmi | json \"type\",\"STN\",\"TG\" | where type=\"daily\" AND !isEmpty(TG)\n| int(stn) as stn \n| lookup station from path://\"/Library/Users/edebueger@sumologic.com/Climate/stations\" on stn\n| where station matches \"{{station}}\"\n| timeslice 1d | sort by Station, _timeslice asc| diff TG as CHANGE\n| 1 as RANK\n| accum RANK as RANK by station\n| if(RANK==1,0,abs(CHANGE/10)) AS CHANGE\n| sort by CHANGE desc |  concat(Station,\" :: \",CHANGE) AS result\n|first(result) AS Station",
+                            "queryType": "Logs",
+                            "queryKey": "A",
+                            "metricsQueryMode": null,
+                            "metricsQueryData": null,
+                            "tracesQueryData": null,
+                            "spansQueryData": null,
+                            "parseMode": "Manual",
+                            "timeSource": "Message",
+                            "outputCardinalityLimit": 1000
+                        }
+                    ],
+                    "description": null,
+                    "timeRange": null,
+                    "coloringRules": null,
+                    "linkedDashboards": []
+                },
+                {
+                    "id": null,
+                    "key": "panelc1c4883093102b46",
+                    "title": "Location weather stations",
+                    "visualSettings": "{\"general\":{\"mode\":\"map\",\"type\":\"map\"},\"map\":{\"mainMetric\":{\"layerType\":\"Cluster\"}},\"series\":{}}",
+                    "keepVisualSettingsConsistentWithParent": true,
+                    "panelType": "SumoSearchPanel",
+                    "queries": [
+                        {
+                            "transient": false,
+                            "queryString": "cat path://\"/Library/Users/edebueger@sumologic.com/Climate/stations\" | where station matches \"{{station}}\"\n| lat as latitude | lon as longitude | fields - alt,lat,lon | count by station,latitude,longitude | fields - station",
+                            "queryType": "Logs",
+                            "queryKey": "A",
+                            "metricsQueryMode": null,
+                            "metricsQueryData": null,
+                            "tracesQueryData": null,
+                            "spansQueryData": null,
+                            "parseMode": "Auto",
+                            "timeSource": "Message",
+                            "outputCardinalityLimit": 1000
+                        }
+                    ],
+                    "description": null,
+                    "timeRange": {
+                        "type": "BeginBoundedTimeRange",
+                        "from": {
+                            "type": "RelativeTimeRangeBoundary",
+                            "relativeTime": "-1w"
+                        },
+                        "to": null
+                    },
+                    "coloringRules": null,
+                    "linkedDashboards": []
+                },
+                {
+                    "id": null,
+                    "key": "panelPANE-E78EE3419036DA47",
+                    "title": "Average temp by station",
+                    "visualSettings": "{\"title\":{\"fontSize\":14},\"axes\":{\"axisX\":{\"titleFontSize\":12,\"labelFontSize\":12},\"axisY\":{\"titleFontSize\":12,\"labelFontSize\":12,\"logarithmic\":false}},\"legend\":{\"enabled\":true,\"verticalAlign\":\"bottom\",\"fontSize\":12,\"maxHeight\":50,\"showAsTable\":false,\"wrap\":true},\"color\":{\"family\":\"Categorical Default\"},\"series\":{},\"general\":{\"type\":\"column\",\"displayType\":\"default\",\"roundDataPoints\":true,\"fillOpacity\":1,\"mode\":\"timeSeries\"},\"overrides\":[]}",
+                    "keepVisualSettingsConsistentWithParent": true,
+                    "panelType": "SumoSearchPanel",
+                    "queries": [
+                        {
+                            "transient": false,
+                            "queryString": "_sourceCategory=knmi | json \"STN\",\"type\",\"TG\" | where type=\"daily\" \n| int(STN) as stn\n| lookup Station from path://\"/Library/Users/edebueger@sumologic.com/Climate/stations\" on stn\n| where station matches \"{{station}}\"\n| timeslice 1d \n| sum(TG) by stn,station,_timeslice | _sum/10 as TEMP \n| fields -_sum,stn | transpose row _timeslice column station",
+                            "queryType": "Logs",
+                            "queryKey": "A",
+                            "metricsQueryMode": null,
+                            "metricsQueryData": null,
+                            "tracesQueryData": null,
+                            "spansQueryData": null,
+                            "parseMode": "Auto",
+                            "timeSource": "Message",
+                            "outputCardinalityLimit": 1000
+                        }
+                    ],
+                    "description": "",
+                    "timeRange": null,
+                    "coloringRules": null,
+                    "linkedDashboards": []
+                },
+                {
+                    "id": null,
+                    "key": "panel8C9B063FB131184A",
+                    "title": "Daily rain(mm) by station",
+                    "visualSettings": "{\"title\":{\"fontSize\":14},\"axes\":{\"axisX\":{\"titleFontSize\":12,\"labelFontSize\":12},\"axisY\":{\"titleFontSize\":12,\"labelFontSize\":12,\"logarithmic\":false}},\"legend\":{\"enabled\":true,\"verticalAlign\":\"bottom\",\"fontSize\":12,\"maxHeight\":50,\"showAsTable\":false,\"wrap\":true},\"color\":{\"family\":\"Categorical Default\"},\"series\":{},\"general\":{\"type\":\"column\",\"displayType\":\"default\",\"roundDataPoints\":true,\"fillOpacity\":1,\"mode\":\"timeSeries\"},\"overrides\":[]}",
+                    "keepVisualSettingsConsistentWithParent": true,
+                    "panelType": "SumoSearchPanel",
+                    "queries": [
+                        {
+                            "transient": false,
+                            "queryString": "_sourceCategory=knmi | json \"STN\",\"type\",\"RH\" | where type=\"daily\" \n| int(STN) as stn\n| lookup Station from path://\"/Library/Users/edebueger@sumologic.com/Climate/stations\" on stn\n| where station matches \"{{station}}\"\n| timeslice 1d \n| sum(RH) by stn,station,_timeslice | _sum/10 as RAIN \n| fields -_sum,stn | transpose row _timeslice column station",
+                            "queryType": "Logs",
+                            "queryKey": "A",
+                            "metricsQueryMode": null,
+                            "metricsQueryData": null,
+                            "tracesQueryData": null,
+                            "spansQueryData": null,
+                            "parseMode": "Auto",
+                            "timeSource": "Message",
+                            "outputCardinalityLimit": 1000
+                        }
+                    ],
+                    "description": "",
+                    "timeRange": null,
+                    "coloringRules": null,
+                    "linkedDashboards": []
+                },
+                {
+                    "id": null,
+                    "key": "panelF9CB94049093AA41",
+                    "title": "Daily Sun Hours",
+                    "visualSettings": "{\"title\":{\"fontSize\":14},\"axes\":{\"axisX\":{\"titleFontSize\":12,\"labelFontSize\":12},\"axisY\":{\"titleFontSize\":12,\"labelFontSize\":12,\"logarithmic\":false}},\"legend\":{\"enabled\":true,\"verticalAlign\":\"bottom\",\"fontSize\":12,\"maxHeight\":50,\"showAsTable\":false,\"wrap\":true},\"color\":{\"family\":\"Categorical Default\"},\"series\":{},\"general\":{\"type\":\"column\",\"displayType\":\"default\",\"roundDataPoints\":true,\"fillOpacity\":1,\"mode\":\"timeSeries\"},\"overrides\":[]}",
+                    "keepVisualSettingsConsistentWithParent": true,
+                    "panelType": "SumoSearchPanel",
+                    "queries": [
+                        {
+                            "transient": false,
+                            "queryString": "_sourceCategory=knmi |json auto | where type=\"daily\" and !isEmpty(SQ)\n| int(stn) as stn \n| lookup station from path://\"/Library/Users/edebueger@sumologic.com/Climate/stations\" on stn\n| where station matches \"{{station}}\"\n| timeslice 1d | count by stn,_timeslice,sq,station | fields - _count,stn\n| sum(sq) as SUN by station,_timeslice | SUN/10 as SUN | transpose row _timeslice column station",
+                            "queryType": "Logs",
+                            "queryKey": "A",
+                            "metricsQueryMode": null,
+                            "metricsQueryData": null,
+                            "tracesQueryData": null,
+                            "spansQueryData": null,
+                            "parseMode": "Auto",
+                            "timeSource": "Message",
+                            "outputCardinalityLimit": 1000
+                        }
+                    ],
+                    "description": null,
+                    "timeRange": null,
+                    "coloringRules": null,
+                    "linkedDashboards": []
+                },
+                {
+                    "id": null,
+                    "key": "panelC55F01B0AFE32A42",
+                    "title": "Max daily temp",
+                    "visualSettings": "{\"title\":{\"fontSize\":14},\"axes\":{\"axisX\":{\"titleFontSize\":12,\"labelFontSize\":12},\"axisY\":{\"titleFontSize\":12,\"labelFontSize\":12,\"logarithmic\":false}},\"legend\":{\"enabled\":true,\"verticalAlign\":\"bottom\",\"fontSize\":12,\"maxHeight\":50,\"showAsTable\":false,\"wrap\":true},\"color\":{\"family\":\"Categorical Default\"},\"series\":{},\"general\":{\"type\":\"column\",\"displayType\":\"default\",\"roundDataPoints\":true,\"fillOpacity\":1,\"mode\":\"timeSeries\"},\"overrides\":[]}",
+                    "keepVisualSettingsConsistentWithParent": true,
+                    "panelType": "SumoSearchPanel",
+                    "queries": [
+                        {
+                            "transient": false,
+                            "queryString": "_sourceCategory=knmi | json \"STN\",\"type\",\"TX\" | where type=\"daily\" \n| int(STN) as stn\n| lookup Station from path://\"/Library/Users/edebueger@sumologic.com/Climate/stations\" on stn\n| where station matches \"{{station}}\"\n| timeslice 1d \n| sum(TX) by stn,station,_timeslice | _sum/10 as TEMP \n| fields -_sum,stn | transpose row _timeslice column station",
+                            "queryType": "Logs",
+                            "queryKey": "A",
+                            "metricsQueryMode": null,
+                            "metricsQueryData": null,
+                            "tracesQueryData": null,
+                            "spansQueryData": null,
+                            "parseMode": "Auto",
+                            "timeSource": "Message",
+                            "outputCardinalityLimit": 1000
+                        }
+                    ],
+                    "description": "",
+                    "timeRange": null,
+                    "coloringRules": null,
+                    "linkedDashboards": []
+                }
+            ],
+            "variables": [
+                {
+                    "id": null,
+                    "name": "station",
+                    "displayName": "station",
+                    "defaultValue": "*",
+                    "sourceDefinition": {
+                        "variableSourceType": "LogQueryVariableSourceDefinition",
+                        "query": "cat path://\"/Library/Users/edebueger@sumologic.com/Climate/stations\"",
+                        "field": "station"
+                    },
+                    "allowMultiSelect": false,
+                    "includeAllOption": true,
+                    "hideFromUI": false,
+                    "valueType": "Any"
+                }
+            ],
+            "coloringRules": []
+        },
+        {
+            "type": "SavedSearchWithScheduleSyncDefinition",
+            "name": "LegendPopulate",
+            "search": {
+                "queryText": "_sourcecategory = \"knmi\" | json \"type\" as type | where type=\"legend\" | json \"symbol\",\"desc\" as Symbol, Description\n| count by Symbol, Description | fields - _count",
+                "byReceiptTime": false,
+                "viewName": "",
+                "viewStartTime": "1970-01-01T00:00:00Z",
+                "queryParameters": [],
+                "parsingMode": "Manual",
+                "defaultTimeRange": "Last 3 Days"
+            },
+            "searchSchedule": {
+                "cronExpression": "0 0 16 ? * 2-6 *",
+                "displayableTimeRange": "Last 3 Days",
+                "parseableTimeRange": {
+                    "type": "BeginBoundedTimeRange",
+                    "from": {
+                        "type": "RelativeTimeRangeBoundary",
+                        "relativeTime": "-3d"
+                    },
+                    "to": null
+                },
+                "timeZone": "UTC",
+                "threshold": null,
+                "notification": {
+                    "taskType": "SaveToLookupNotificationSyncDefinition",
+                    "lookupFilePath": "/Library/Users/edebueger@sumologic.com/Climate/legend",
+                    "isLookupMergeOperation": false
+                },
+                "scheduleType": "1Day",
+                "muteErrorEmails": false,
+                "parameters": []
+            },
+            "description": ""
+        },
+        {
+            "type": "SavedSearchWithScheduleSyncDefinition",
+            "name": "StationPopulate",
+            "search": {
+                "queryText": "_sourcecategory = \"knmi\" | json \"type\" as type | where type=\"station\" | json \"STN\",\"LAT\",\"LON\",\"ALT\",\"Station\" as stn,lat, lon,alt,station\n| count by stn, lat,lon,alt,station | fields - _count | int(stn) as stn",
+                "byReceiptTime": false,
+                "viewName": "",
+                "viewStartTime": "1970-01-01T00:00:00Z",
+                "queryParameters": [],
+                "parsingMode": "Manual",
+                "defaultTimeRange": "Last 3 Days"
+            },
+            "searchSchedule": {
+                "cronExpression": "0 0 17 ? * 2-6 *",
+                "displayableTimeRange": "Last 3 Days",
+                "parseableTimeRange": {
+                    "type": "BeginBoundedTimeRange",
+                    "from": {
+                        "type": "RelativeTimeRangeBoundary",
+                        "relativeTime": "-3d"
+                    },
+                    "to": null
+                },
+                "timeZone": "UTC",
+                "threshold": null,
+                "notification": {
+                    "taskType": "SaveToLookupNotificationSyncDefinition",
+                    "lookupFilePath": "/Library/Users/edebueger@sumologic.com/Climate/stations",
+                    "isLookupMergeOperation": false
+                },
+                "scheduleType": "1Day",
+                "muteErrorEmails": false,
+                "parameters": []
+            },
+            "description": ""
+        },
+        {
+            "type": "LookupTableSyncDefinition",
+            "name": "legend",
+            "description": "",
+            "fields": [
+                {
+                    "fieldName": "Symbol",
+                    "fieldType": "string"
+                },
+                {
+                    "fieldName": "Description",
+                    "fieldType": "string"
+                }
+            ],
+            "primaryKeys": [
+                "Symbol"
+            ],
+            "ttl": 0,
+            "sizeLimitAction": "StopIncomingMessages"
+        },
+        {
+            "type": "LookupTableSyncDefinition",
+            "name": "stations",
+            "description": "",
+            "fields": [
+                {
+                    "fieldName": "stn",
+                    "fieldType": "int"
+                },
+                {
+                    "fieldName": "lat",
+                    "fieldType": "string"
+                },
+                {
+                    "fieldName": "lon",
+                    "fieldType": "string"
+                },
+                {
+                    "fieldName": "alt",
+                    "fieldType": "string"
+                },
+                {
+                    "fieldName": "station",
+                    "fieldType": "string"
+                }
+            ],
+            "primaryKeys": [
+                "stn"
+            ],
+            "ttl": 0,
+            "sizeLimitAction": "StopIncomingMessages"
+        }
+    ]
+}

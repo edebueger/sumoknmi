@@ -427,6 +427,7 @@ def main():
     sh = logging.StreamHandler(sys.stderr)
     sh.setFormatter(formatter)
     logger        = logging.getLogger('KNMI')
+    logger.handlers.clear()
     logger.addHandler(sh)
     logger.level=numeric_level
 
