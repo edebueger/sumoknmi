@@ -226,7 +226,7 @@ class EventWriterCachedJSON(EventWriter) :
             data=message
         self.cache.append(data)
         if len(self.cache) >= self.batch :
-            s='\n'.join([x for x in json.dumps(self.cache)])
+            s='\n'.join([json.dumps(x) for x in self.cache])
             response = requests.post(self.url, data=s)
             self.cache=[]
             if self.logger != None:
@@ -234,7 +234,7 @@ class EventWriterCachedJSON(EventWriter) :
 
     def flush(self) :
         if len(self.cache) > 0:
-            s='\n'.join([x for x in json.dumps(self.cache)])
+            s='\n'.join([json.dumps(x) for x in self.cache])
             response = requests.post(self.url, s)
             self.cache=[]
 
@@ -380,6 +380,10 @@ def main():
                  help='if set donot run as as lambda function, default=False')
     p.add_option("--region", dest="region", default='us-east-2', \
                      help = 'AWS region, defaults to: {}'.format('us-east-2'))
+    p.add_option("--OTEL_RESOURCE_ATTRIBUTES", dest="OTEL_RESOURCE_ATTRIBUTES", default='application=KNMI,cloud.account.id=396468786791,deployment.environment=eriksdeployment', \
+                     help = 'OTEL environment parameters , defaults to: {}'.format('application=KNMI,cloud.account.id=396468786791,deployment.environment=eriksdeployment'))
+    p.add_option("--OTEL_SERVICE_NAME", dest="OTEL_SERVICE_NAME", default='KNMI', \
+                     help = 'OTEL Service name, defaults to: {}'.format('KNMI'))
     p.add_option("-l", "--log", dest="loglevel", default='WARNING', \
                  help = 'loglevel field, defaults to WARNING, options are: CRITICAL, ERROR, WARNING, INFO, DEBUG, NOTSET')
     p.add_option("--cache", dest="cache", default='lastknmievents', \
@@ -387,7 +391,7 @@ def main():
     opts,args = p.parse_args()
 
     # For AWS lambda: try to overwrite some options from environment
-    for x in ('format','endpoint','logtype','url','loglevel','stationnumber','region','history','latest','maxdays','batch') :
+    for x in ('format','endpoint','logtype','url','loglevel','stationnumber','region','history','latest','maxdays','batch','OTEL_RESOURCE_ATTRIBUTES','OTEL_SERVICE_NAME') :
         try:
             exec('opts.{}=os.environ[\'{}\']'.format(x,x))
         except Exception as e:
@@ -413,6 +417,9 @@ def main():
     except:
         pass
 
+    # Otel parameters, to be inclided in any logging
+    # application=KNMI,cloud.account.id=396468786791,deployment.environment=eriksdeployment
+    
     startdate= datetime.datetime.now()-datetime.timedelta(days=opts.history)
     enddate= datetime.datetime.now()-datetime.timedelta(days=opts.latest)
 
@@ -421,12 +428,11 @@ def main():
     if not isinstance(numeric_level, int):
         raise ValueError('Invalid log level: %s' % opts.loglevel)
 
-    formatter = logging.Formatter('%(asctime)s,Level=%(levelname)s,\
-                                   LOGGING=%(message)s', '%m/%d/%Y %H:%M:%S')
-
+    formatter = logging.Formatter('service={},{} -- '.format(opts.OTEL_SERVICE_NAME,opts.OTEL_RESOURCE_ATTRIBUTES)+'%(asctime)s,Level=%(levelname)s,LOGGING=%(message)s', '%m/%d/%Y %H:%M:%S')
     sh = logging.StreamHandler(sys.stderr)
     sh.setFormatter(formatter)
     logger        = logging.getLogger('KNMI')
+    #logger        = logging.getLogger()
     logger.handlers.clear()
     logger.addHandler(sh)
     logger.level=numeric_level

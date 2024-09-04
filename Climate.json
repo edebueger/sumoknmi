@@ -4,6 +4,58 @@
     "description": "",
     "children": [
         {
+            "type": "LookupTableSyncDefinition",
+            "name": "legend",
+            "description": "",
+            "fields": [
+                {
+                    "fieldName": "Symbol",
+                    "fieldType": "string"
+                },
+                {
+                    "fieldName": "Description",
+                    "fieldType": "string"
+                }
+            ],
+            "primaryKeys": [
+                "Symbol"
+            ],
+            "ttl": 0,
+            "sizeLimitAction": "StopIncomingMessages"
+        },
+        {
+            "type": "LookupTableSyncDefinition",
+            "name": "stations",
+            "description": "",
+            "fields": [
+                {
+                    "fieldName": "stn",
+                    "fieldType": "int"
+                },
+                {
+                    "fieldName": "lat",
+                    "fieldType": "string"
+                },
+                {
+                    "fieldName": "lon",
+                    "fieldType": "string"
+                },
+                {
+                    "fieldName": "alt",
+                    "fieldType": "string"
+                },
+                {
+                    "fieldName": "station",
+                    "fieldType": "string"
+                }
+            ],
+            "primaryKeys": [
+                "stn"
+            ],
+            "ttl": 0,
+            "sizeLimitAction": "StopIncomingMessages"
+        },
+        {
             "type": "DashboardV2SyncDefinition",
             "name": "KNMI",
             "description": "",
@@ -89,7 +141,7 @@
                     "queries": [
                         {
                             "transient": false,
-                            "queryString": "_sourceCategory=knmi |json auto | where type=\"daily\" and !isEmpty(SQ)\n| int(stn) as stn \n| lookup station,lat,lon from path://\"/Library/Users/edebueger@sumologic.com/Climate/stations\" on stn\n| where station matches \"{{station}}\"\n| timeslice 1d | count by stn, lat,lon,_timeslice,sq | fields - _count \n| sum(sq) as SUN by stn, lat,lon | double(lat) as latitude| double(lon) as longitude | fields -lat,lon,stn | SUN/10 as _count",
+                            "queryString": "_sourceCategory=knmi/daily |json auto | where type=\"daily\" and !isEmpty(SQ)\n| int(stn) as stn \n| lookup station,lat,lon from path://\"/Library/Users/edebueger@sumologic.com/Climate/stations\" on stn\n| where station matches \"{{station}}\"\n| timeslice 1d | count by stn, lat,lon,_timeslice,sq | fields - _count \n| sum(sq) as SUN by stn, lat,lon | double(lat) as latitude| double(lon) as longitude | fields -lat,lon,stn | SUN/10 as _count",
                             "queryType": "Logs",
                             "queryKey": "A",
                             "metricsQueryMode": null,
@@ -116,7 +168,7 @@
                     "queries": [
                         {
                             "transient": false,
-                            "queryString": "_sourceCategory=knmi |json auto | where type=\"daily\"\n| int(stn) as stn \n| lookup station from path://\"/Library/Users/edebueger@sumologic.com/Climate/stations\" on stn\n| where station matches \"{{station}}\"\n|min(tn) as MINTEMP by station  | MINTEMP/10 as TEMP |sort by TEMP asc | concat(Station,\" :: \",TEMP) AS result | first(result)",
+                            "queryString": "_sourceCategory=knmi/daily |json auto | where type=\"daily\"\n| int(stn) as stn \n| lookup station from path://\"/Library/Users/edebueger@sumologic.com/Climate/stations\" on stn\n| where station matches \"{{station}}\"\n|min(tn) as MINTEMP by station  | MINTEMP/10 as TEMP |sort by TEMP asc | concat(Station,\" :: \",TEMP) AS result | first(result)",
                             "queryType": "Logs",
                             "queryKey": "A",
                             "metricsQueryMode": null,
@@ -143,7 +195,7 @@
                     "queries": [
                         {
                             "transient": false,
-                            "queryString": "_sourceCategory=knmi |json auto | where type=\"daily\"\n| int(stn) as stn \n| lookup station from path://\"/Library/Users/edebueger@sumologic.com/Climate/stations\" on stn\n| where station matches \"{{station}}\"\n|max(tx) as MAXTEMP by station  | MAXTEMP/10 as TEMP |sort by TEMP desc | concat(Station,\" :: \",TEMP) AS result | first(result)",
+                            "queryString": "_sourceCategory=knmi/daily |json auto | where type=\"daily\"\n| int(stn) as stn \n| lookup station from path://\"/Library/Users/edebueger@sumologic.com/Climate/stations\" on stn\n| where station matches \"{{station}}\"\n|max(tx) as MAXTEMP by station  | MAXTEMP/10 as TEMP |sort by TEMP desc | concat(Station,\" :: \",TEMP) AS result | first(result)",
                             "queryType": "Logs",
                             "queryKey": "A",
                             "metricsQueryMode": null,
@@ -170,7 +222,7 @@
                     "queries": [
                         {
                             "transient": false,
-                            "queryString": "_sourceCategory=knmi | json \"type\" as type| where type=\"daily\"\n| int(stn) as stn \n| lookup station from path://\"/Library/Users/edebueger@sumologic.com/Climate/stations\" on stn\n| where station matches \"{{station}}\"\n|first(_messageTime) AS lastday | now() - lastday AS msecs | msecs/86400000 as dd | ceil(dd) as DAYS | fields DAYS",
+                            "queryString": "_sourceCategory=knmi/daily | json \"type\" as type| where type=\"daily\"\n| int(stn) as stn \n| lookup station from path://\"/Library/Users/edebueger@sumologic.com/Climate/stations\" on stn\n| where station matches \"{{station}}\"\n|first(_messageTime) AS lastday | now() - lastday AS msecs | msecs/86400000 as dd | ceil(dd) as DAYS | fields DAYS",
                             "queryType": "Logs",
                             "queryKey": "A",
                             "metricsQueryMode": null,
@@ -197,7 +249,7 @@
                     "queries": [
                         {
                             "transient": false,
-                            "queryString": "_sourceCategory=knmi |json auto | where type=\"daily\" and !isEmpty(RH)\n| int(stn) as stn \n| lookup station,lat,lon from path://\"/Library/Users/edebueger@sumologic.com/Climate/stations\" on stn\n| where station matches \"{{station}}\"\n| timeslice 1d | count by stn, lat,lon,_timeslice,rh | fields - _count | where rh != -1\n| sum(rh) as RAIN by stn, lat,lon | RAIN/10 as RAIN |double(lat) as latitude| double(lon) as longitude | fields -lat,lon,stn | Rain as _count",
+                            "queryString": "_sourceCategory=knmi/daily |json auto | where type=\"daily\" and !isEmpty(RH)\n| int(stn) as stn \n| lookup station,lat,lon from path://\"/Library/Users/edebueger@sumologic.com/Climate/stations\" on stn\n| where station matches \"{{station}}\"\n| timeslice 1d | count by stn, lat,lon,_timeslice,rh | fields - _count | where rh != -1\n| sum(rh) as RAIN by stn, lat,lon | RAIN/10 as RAIN |double(lat) as latitude| double(lon) as longitude | fields -lat,lon,stn | Rain as _count",
                             "queryType": "Logs",
                             "queryKey": "A",
                             "metricsQueryMode": null,
@@ -224,7 +276,7 @@
                     "queries": [
                         {
                             "transient": false,
-                            "queryString": "_sourceCategory=knmi |json auto | where type=\"daily\"\n| int(stn) as stn \n| lookup station,lat,lon from path://\"/Library/Users/edebueger@sumologic.com/Climate/stations\" on stn\n| where station matches \"{{station}}\"\n| timeslice 1d\n| count by _timeslice, station, TG,lat,lon \n| sort by station,_timeslice \n| first(TG) AS TG,first(lat) AS lat, first(lon) AS lon by Station | TG/10 as TEMP\n| avg(TEMP) by Station, lat,lon | lat as latitude | lon as longitude | round(_avg) as _count| fields -lat,lon,_avg,station | double(latitude) as latitude | double(longitude) as longitude",
+                            "queryString": "_sourceCategory=knmi/daily |json auto | where type=\"daily\"\n| int(stn) as stn \n| lookup station,lat,lon from path://\"/Library/Users/edebueger@sumologic.com/Climate/stations\" on stn\n| where station matches \"{{station}}\"\n| timeslice 1d\n| count by _timeslice, station, TG,lat,lon \n| sort by station,_timeslice \n| first(TG) AS TG,first(lat) AS lat, first(lon) AS lon by Station | TG/10 as TEMP\n| avg(TEMP) by Station, lat,lon | lat as latitude | lon as longitude | round(_avg) as _count| fields -lat,lon,_avg,station | double(latitude) as latitude | double(longitude) as longitude",
                             "queryType": "Logs",
                             "queryKey": "A",
                             "metricsQueryMode": null,
@@ -292,7 +344,7 @@
                     "queries": [
                         {
                             "transient": false,
-                            "queryString": "_sourceCategory=knmi | json \"type\",\"STN\",\"TG\" | where type=\"daily\" AND !isEmpty(TG)\n| int(stn) as stn \n| lookup station from path://\"/Library/Users/edebueger@sumologic.com/Climate/stations\" on stn\n| where station matches \"{{station}}\"\n| timeslice 1d | sort by Station, _timeslice asc| diff TG as CHANGE\n| 1 as RANK\n| accum RANK as RANK by station\n| if(RANK==1,0,abs(CHANGE/10)) AS CHANGE\n| sort by CHANGE desc |  concat(Station,\" :: \",CHANGE) AS result\n|first(result) AS Station",
+                            "queryString": "_sourceCategory=knmi/daily | json \"type\",\"STN\",\"TG\" | where type=\"daily\" AND !isEmpty(TG)\n| int(stn) as stn \n| lookup station from path://\"/Library/Users/edebueger@sumologic.com/Climate/stations\" on stn\n| where station matches \"{{station}}\"\n| timeslice 1d | sort by Station, _timeslice asc| diff TG as CHANGE\n| 1 as RANK\n| accum RANK as RANK by station\n| if(RANK==1,0,abs(CHANGE/10)) AS CHANGE\n| sort by CHANGE desc |  concat(Station,\" :: \",CHANGE) AS result\n|first(result) AS Station",
                             "queryType": "Logs",
                             "queryKey": "A",
                             "metricsQueryMode": null,
@@ -353,7 +405,7 @@
                     "queries": [
                         {
                             "transient": false,
-                            "queryString": "_sourceCategory=knmi | json \"STN\",\"type\",\"TG\" | where type=\"daily\" \n| int(STN) as stn\n| lookup Station from path://\"/Library/Users/edebueger@sumologic.com/Climate/stations\" on stn\n| where station matches \"{{station}}\"\n| timeslice 1d \n| sum(TG) by stn,station,_timeslice | _sum/10 as TEMP \n| fields -_sum,stn | transpose row _timeslice column station",
+                            "queryString": "_sourceCategory=knmi/daily | json \"STN\",\"type\",\"TG\" | where type=\"daily\" \n| int(STN) as stn\n| lookup Station from path://\"/Library/Users/edebueger@sumologic.com/Climate/stations\" on stn\n| where station matches \"{{station}}\"\n| timeslice 1d \n| sum(TG) by stn,station,_timeslice | _sum/10 as TEMP \n| fields -_sum,stn | transpose row _timeslice column station",
                             "queryType": "Logs",
                             "queryKey": "A",
                             "metricsQueryMode": null,
@@ -380,7 +432,7 @@
                     "queries": [
                         {
                             "transient": false,
-                            "queryString": "_sourceCategory=knmi | json \"STN\",\"type\",\"RH\" | where type=\"daily\" \n| int(STN) as stn\n| lookup Station from path://\"/Library/Users/edebueger@sumologic.com/Climate/stations\" on stn\n| where station matches \"{{station}}\"\n| timeslice 1d \n| sum(RH) by stn,station,_timeslice | _sum/10 as RAIN \n| fields -_sum,stn | transpose row _timeslice column station",
+                            "queryString": "_sourceCategory=knmi/daily | json \"STN\",\"type\",\"RH\" | where type=\"daily\" \n| int(STN) as stn\n| lookup Station from path://\"/Library/Users/edebueger@sumologic.com/Climate/stations\" on stn\n| where station matches \"{{station}}\"\n| timeslice 1d \n| sum(RH) by stn,station,_timeslice | _sum/10 as RAIN \n| fields -_sum,stn | transpose row _timeslice column station",
                             "queryType": "Logs",
                             "queryKey": "A",
                             "metricsQueryMode": null,
@@ -407,7 +459,7 @@
                     "queries": [
                         {
                             "transient": false,
-                            "queryString": "_sourceCategory=knmi |json auto | where type=\"daily\" and !isEmpty(SQ)\n| int(stn) as stn \n| lookup station from path://\"/Library/Users/edebueger@sumologic.com/Climate/stations\" on stn\n| where station matches \"{{station}}\"\n| timeslice 1d | count by stn,_timeslice,sq,station | fields - _count,stn\n| sum(sq) as SUN by station,_timeslice | SUN/10 as SUN | transpose row _timeslice column station",
+                            "queryString": "_sourceCategory=knmi/daily |json auto | where type=\"daily\" and !isEmpty(SQ)\n| int(stn) as stn \n| lookup station from path://\"/Library/Users/edebueger@sumologic.com/Climate/stations\" on stn\n| where station matches \"{{station}}\"\n| timeslice 1d | count by stn,_timeslice,sq,station | fields - _count,stn\n| sum(sq) as SUN by station,_timeslice | SUN/10 as SUN | transpose row _timeslice column station",
                             "queryType": "Logs",
                             "queryKey": "A",
                             "metricsQueryMode": null,
@@ -434,7 +486,7 @@
                     "queries": [
                         {
                             "transient": false,
-                            "queryString": "_sourceCategory=knmi | json \"STN\",\"type\",\"TX\" | where type=\"daily\" \n| int(STN) as stn\n| lookup Station from path://\"/Library/Users/edebueger@sumologic.com/Climate/stations\" on stn\n| where station matches \"{{station}}\"\n| timeslice 1d \n| sum(TX) by stn,station,_timeslice | _sum/10 as TEMP \n| fields -_sum,stn | transpose row _timeslice column station",
+                            "queryString": "_sourceCategory=knmi/daily | json \"STN\",\"type\",\"TX\" | where type=\"daily\" \n| int(STN) as stn\n| lookup Station from path://\"/Library/Users/edebueger@sumologic.com/Climate/stations\" on stn\n| where station matches \"{{station}}\"\n| timeslice 1d \n| sum(TX) by stn,station,_timeslice | _sum/10 as TEMP \n| fields -_sum,stn | transpose row _timeslice column station",
                             "queryType": "Logs",
                             "queryKey": "A",
                             "metricsQueryMode": null,
@@ -475,7 +527,7 @@
             "type": "SavedSearchWithScheduleSyncDefinition",
             "name": "LegendPopulate",
             "search": {
-                "queryText": "_sourcecategory = \"knmi\" | json \"type\" as type | where type=\"legend\" | json \"symbol\",\"desc\" as Symbol, Description\n| count by Symbol, Description | fields - _count",
+                "queryText": "_sourcecategory = \"knmi/daily\" | json \"type\" as type | where type=\"legend\" | json \"symbol\",\"desc\" as Symbol, Description\n| count by Symbol, Description | fields - _count",
                 "byReceiptTime": false,
                 "viewName": "",
                 "viewStartTime": "1970-01-01T00:00:00Z",
@@ -511,7 +563,7 @@
             "type": "SavedSearchWithScheduleSyncDefinition",
             "name": "StationPopulate",
             "search": {
-                "queryText": "_sourcecategory = \"knmi\" | json \"type\" as type | where type=\"station\" | json \"STN\",\"LAT\",\"LON\",\"ALT\",\"Station\" as stn,lat, lon,alt,station\n| count by stn, lat,lon,alt,station | fields - _count | int(stn) as stn",
+                "queryText": "_sourcecategory = \"knmi/daily\" | json \"type\" as type | where type=\"station\" | json \"STN\",\"LAT\",\"LON\",\"ALT\",\"Station\" as stn,lat, lon,alt,station\n| count by stn, lat,lon,alt,station | fields - _count | int(stn) as stn",
                 "byReceiptTime": false,
                 "viewName": "",
                 "viewStartTime": "1970-01-01T00:00:00Z",
@@ -542,58 +594,6 @@
                 "parameters": []
             },
             "description": ""
-        },
-        {
-            "type": "LookupTableSyncDefinition",
-            "name": "legend",
-            "description": "",
-            "fields": [
-                {
-                    "fieldName": "Symbol",
-                    "fieldType": "string"
-                },
-                {
-                    "fieldName": "Description",
-                    "fieldType": "string"
-                }
-            ],
-            "primaryKeys": [
-                "Symbol"
-            ],
-            "ttl": 0,
-            "sizeLimitAction": "StopIncomingMessages"
-        },
-        {
-            "type": "LookupTableSyncDefinition",
-            "name": "stations",
-            "description": "",
-            "fields": [
-                {
-                    "fieldName": "stn",
-                    "fieldType": "int"
-                },
-                {
-                    "fieldName": "lat",
-                    "fieldType": "string"
-                },
-                {
-                    "fieldName": "lon",
-                    "fieldType": "string"
-                },
-                {
-                    "fieldName": "alt",
-                    "fieldType": "string"
-                },
-                {
-                    "fieldName": "station",
-                    "fieldType": "string"
-                }
-            ],
-            "primaryKeys": [
-                "stn"
-            ],
-            "ttl": 0,
-            "sizeLimitAction": "StopIncomingMessages"
         }
     ]
 }
