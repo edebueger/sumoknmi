@@ -349,7 +349,6 @@ def DoCollect(startdate,enddate,cachedate,opts,eventwriter,cache,logger):
             cache.Write('daily',thedate)
         logger.info('Send {} events for day {}'.format(nEvents,thedate.strftime(standarddateformat)))
 
-
 # Main code
 def main():
     # Parse command line options
