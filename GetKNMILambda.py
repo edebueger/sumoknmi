@@ -208,7 +208,7 @@ class EventWriterJSON(EventWriter) :
             data=message
         response = requests.post(self.url, data=json.dumps(data))
         if self.logger != None:
-            self.logger.info('Endpoint response: {}'.format(response.text))
+            self.logger.info('Endpoint response: {} - {}'.format(response.status_code,response.text))
 
 class EventWriterCachedJSON(EventWriter) :
     def __init__(self, **kwargs):
@@ -230,7 +230,7 @@ class EventWriterCachedJSON(EventWriter) :
             response = requests.post(self.url, data=s)
             self.cache=[]
             if self.logger != None:
-                self.logger.info('Endpoint response: {}'.format(response.text))
+                self.logger.info('Endpoint response: {} - {}'.format(response.status_code,response.text))
 
     def flush(self) :
         if len(self.cache) > 0:
@@ -427,7 +427,7 @@ def main():
     if not isinstance(numeric_level, int):
         raise ValueError('Invalid log level: %s' % opts.loglevel)
 
-    formatter = logging.Formatter('service={},{} -- '.format(opts.OTEL_SERVICE_NAME,opts.OTEL_RESOURCE_ATTRIBUTES)+'%(asctime)s,Level=%(levelname)s,LOGGING=%(message)s', '%m/%d/%Y %H:%M:%S')
+    formatter = logging.Formatter('service={},Namespace={},{} -- '.format(opts.OTEL_SERVICE_NAME,'aws/lambda',opts.OTEL_RESOURCE_ATTRIBUTES)+'%(asctime)s,Level=%(levelname)s,LOGGING=%(message)s', '%m/%d/%Y %H:%M:%S')
     sh = logging.StreamHandler(sys.stderr)
     sh.setFormatter(formatter)
     logger        = logging.getLogger('KNMI')
